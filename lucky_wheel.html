@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Vòng quay may mắn</title>
+  <style>
+    :root {
+      --bg: #0f1220;
+      --card: #171a2b;
+      --text: #e9ecff;
+      --muted: #aab1d6;
+      --accent: #6c8cff;
+      --accent-2: #2ed6a5;
+      --danger: #ff6b6b;
+      --warning: #ffd166;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      background: radial-gradient(1200px 800px at 50% -10%, #1b2040 0%, var(--bg) 40%  );
+      color: var(--text);
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+    .app {
+      width: 100%;
+      max-width: 940px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: 0 20px 80px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.05);
+      backdrop-filter: blur(4px);
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 6px 8px 12px;
+      border-bottom: 1px dashed rgba(255,255,255,0.12);
+      margin-bottom: 16px;
+    }
+    .brand {
+      display: flex; align-items: center; gap: 10px;
+    }
+    .logo {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: conic-gradient(from 0deg, #6c8cff, #2ed6a5, #ffd166, #ff6b6b, #6c8cff);
+      border: 1px solid rgba(255,255,255,0.25);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.35);
+    }
+    h1 { font-size: 18px; margin: 0; font-weight: 700; letter-spacing: .2px; }
+    .subtitle { color: var(--muted); font-size: 13px; }
+    .auth {
+      display: flex; align-items: center; gap: 10px;
+    }
+    button {
+      appearance: none; border: 0; border-radius: 10px; padding: 10px 14px;
+      background: var(--accent); color: white; font-weight: 600; cursor: pointer; font-size: 14px;
+      box-shadow: 0 6px 20px rgba(108,140,255,.35);
+      transition: transform .05s ease, filter .2s ease;
+    }
+    button:hover { filter: brightness(1.05); }
+    button:active { transform: translateY(1px); }
+    button.secondary { background: transparent; color: var(--text); border: 1px solid rgba(255,255,255,0.18); box-shadow: none; }
+    button[disabled] { opacity: .6; cursor: not-allowed; filter: grayscale(.2); }
+    .user {
+      display: flex; align-items: center; gap: 10px; font-size: 14px;
+    }
+    .avatar { width: 34px; height: 34px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.25); }
+    main {
+      display: grid; grid-template-columns: 1.4fr 1fr; gap: 22px; align-items: center;
+    }
+    .panel {
+      background: var(--card);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+    }
+    .wheel-wrap { display: grid; place-items: center; padding: 6px; }
+    canvas { width: 100%; max-width: 520px; height: auto; }
+    .ctrls { display: flex; gap: 10px; margin-top: 12px; justify-content: center; }
+    .note { color: var(--muted); font-size: 13px; text-align: center; margin-top: 8px; }
+    .result {
+      font-size: 16px; line-height: 1.5;
+      background: rgba(46,214,165,0.08);
+      border: 1px solid rgba(46,214,165,0.25);
+      padding: 12px; border-radius: 12px;
+      margin-top: 12px;
+    }
+    .result.bad {
+      background: rgba(255,107,107,0.08);
+      border-color: rgba(255,107,107,0.25);
+    }
+    .result.warn {
+      background: rgba(255,209,102,0.1);
+      border-color: rgba(255,209,102,0.25);
+    }
+    ul.prizes {
+      list-style: none; padding: 0; margin: 0; display: grid; gap: 6px;
+    }
+    ul.prizes li {
+      display: flex; align-items: center; gap: 10px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px; padding: 10px 12px; font-size: 14px;
+    }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent-2); box-shadow: 0 0 8px rgba(46,214,165, .7); }
+    .foot {
+      margin-top: 10px; font-size: 12px; color: var(--muted); text-align: center;
+    }
+    @media (max-width: 900px) {
+      main { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="brand">
+        <div class="logo"></div>
+        <div>
+          <h1>Vòng quay may mắn</h1>
+          <div class="subtitle">Đăng nhập bằng Google để quay — mỗi tài khoản chỉ được quay một lần (trúng "Quay lần nữa" sẽ được quay thêm 1 lần).</div>
+        </div>
+      </div>
+      <div class="auth" id="authArea">
+        <button id="btnSignIn">Đăng nhập Google</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="panel wheel-wrap">
+        <canvas id="wheel" width="520" height="520"></canvas>
+        <div class="ctrls">
+          <button id="btnSpin" disabled>Quay</button>
+          <button id="btnSignOut" class="secondary" style="display:none">Đăng xuất</button>
+        </div>
+        <div class="note">Mũi tên ở trên: khi bánh xe dừng lại, phần <b>điểm vào</b> nằm ở đỉnh sẽ là phần thưởng của bạn.</div>
+        <div id="resultBox" class="result" style="display:none"></div>
+      </section>
+
+      <section class="panel">
+        <h3 style="margin-top:0">Cơ cấu giải thưởng (10 ô)</h3>
+        <ul class="prizes">
+          <li><span class="dot"></span> 3 ô: Thẻ Soha 10k</li>
+          <li><span class="dot"></span> 2 ô: Thẻ Soha 20k</li>
+          <li><span class="dot"></span> 2 ô: Thẻ Soha 50k</li>
+          <li><span class="dot"></span> 1 ô: Thẻ Soha 100k</li>
+          <li><span class="dot"></span> 1 ô: Quay lần nữa</li>
+          <li><span class="dot"></span> 1 ô: Chúc bạn may mắn lần sau</li>
+        </ul>
+        <div class="foot">
+          Lưu ý: Để đảm bảo công bằng, hệ thống ghi nhận kết quả gắn với tài khoản Google của bạn.
+        </div>
+        <hr style="border-color: rgba(255,255,255,0.1)">
+        <details>
+          <summary><b>Hướng dẫn cấu hình Firebase (bắt buộc cho đăng nhập & giới hạn 1 lần/người)</b></summary>
+          <ol>
+            <li>Tạo dự án tại <a href="https://console.firebase.google.com/" target="_blank" rel="noopener">Firebase Console</a>.</li>
+            <li>Vào <i>Build → Authentication → Sign-in method</i>, bật <b>Google</b>.</li>
+            <li>Vào <i>Firestore Database</i>, tạo database ở chế độ Production.</li>
+            <li>Vào <i>Project settings → General → Your apps → Web app</i>, lấy <b>Firebase config</b> và dán vào phần cấu hình ở cuối file này.</li>
+            <li>Triển khai file HTML này lên bất cứ nơi đâu (GitHub Pages, Vercel, Netlify…).</li>
+          </ol>
+          <p><i>Tùy chọn (rules Firestore tối thiểu):</i></p>
+          <pre style="white-space:pre-wrap;background:#0b0e1a;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,.08)">
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /spins/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+  }
+}
+          </pre>
+        </details>
+      </section>
+    </main>
+  </div>
+
+  <!-- Firebase v9 compat (simplifies script in one file) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBabxSpe_JDzzUe2hT6a-PhWG1nkfQBc1Y",
+      authDomain: "slayyy-72e36.firebaseapp.com",
+      projectId: "slayyy-72e36",
+      storageBucket: "slayyy-72e36.firebasestorage.app",
+      messagingSenderId: "769283489761",
+      appId: "1:769283489761:web:118a7cc8bdcafcc0e29ca0"
+};
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    // Prize segments (10)
+    const SEGMENTS = [
+      { label: "Thẻ Soha 10k" },
+      { label: "Thẻ Soha 10k" },
+      { label: "Thẻ Soha 10k" },
+      { label: "Thẻ Soha 20k" },
+      { label: "Thẻ Soha 20k" },
+      { label: "Thẻ Soha 50k" },
+      { label: "Thẻ Soha 50k" },
+      { label: "Thẻ Soha 100k" },
+      { label: "Quay lần nữa" },
+      { label: "Chúc bạn may mắn\nlần sau" }
+    ];
+
+    // Simple color palette for segments
+    const COLORS = [
+      "#7C83FD","#96BAFF","#7DEDFF","#88F7F2","#6EE7B7",
+      "#FCD34D","#FCA5A5","#F472B6","#C4B5FD","#A5B4FC"
+    ];
+
+    // ===== Canvas Wheel =====
+    const canvas = document.getElementById('wheel');
+    const ctx = canvas.getContext('2d');
+    const size = canvas.width; // 520
+    const r = size / 2;
+    const center = { x: r, y: r };
+    const pointerLen = 26;
+
+    // Draw pointer at top (triangle)
+    function drawPointer() {
+      ctx.save();
+      ctx.translate(center.x, center.y);
+      ctx.rotate(0); // pointer stays at top
+      ctx.fillStyle = "#ffffff";
+      ctx.beginPath();
+      ctx.moveTo(0, -r - 6);
+      ctx.lineTo(10, -r + 18);
+      ctx.lineTo(-10, -r + 18);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawWheel(angle = 0) {
+      ctx.clearRect(0, 0, size, size);
+
+      // Outer shadow ring
+      ctx.save();
+      ctx.translate(center.x, center.y);
+      ctx.rotate(angle);
+
+      const segAngle = (Math.PI * 2) / SEGMENTS.length;
+
+      for (let i = 0; i < SEGMENTS.length; i++) {
+        // Slice
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.arc(0, 0, r - 10, i * segAngle, (i + 1) * segAngle);
+        ctx.closePath();
+        ctx.fillStyle = COLORS[i % COLORS.length];
+        ctx.fill();
+
+        // Separator line
+        ctx.strokeStyle = "rgba(0,0,0,0.2)";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.arc(0, 0, r - 10, i * segAngle, (i + 1) * segAngle);
+        ctx.closePath();
+        ctx.stroke();
+
+        // Text
+        ctx.save();
+        ctx.fillStyle = "#0b0e1a";
+        ctx.font = "bold 16px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        const theta = i * segAngle + segAngle / 2;
+        const tx = Math.cos(theta) * (r * 0.62);
+        const ty = Math.sin(theta) * (r * 0.62);
+        ctx.translate(tx, ty);
+        ctx.rotate(theta + Math.PI / 2);
+        const label = SEGMENTS[i].label;
+        const lines = label.split("\n");
+        if (lines.length === 1) {
+          ctx.fillText(label, 0, 0);
+        } else {
+          ctx.fillText(lines[0], 0, -9);
+          ctx.fillText(lines[1], 0, 9);
+        }
+        ctx.restore();
+      }
+
+      // Center cap
+      ctx.beginPath();
+      ctx.arc(0, 0, 42, 0, Math.PI * 2);
+      ctx.fillStyle = "#ffffff";
+      ctx.fill();
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = "rgba(0,0,0,0.15)";
+      ctx.stroke();
+
+      // Label center
+      ctx.fillStyle = "#0b0e1a";
+      ctx.font = "700 14px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText("QUAY", 0, -2);
+      ctx.fillText("NGAY!", 0, 14);
+
+      ctx.restore();
+
+      // Pointer on top
+      drawPointer();
+    }
+
+    let spinning = false;
+    let currentAngle = 0;
+
+    function randomSpin() {
+      // Random total spins + extra offset to target random segment
+      const spins = 6 + Math.floor(Math.random() * 4); // 6..9 rounds
+      const targetSegment = Math.floor(Math.random() * SEGMENTS.length);
+      const segAngle = (Math.PI * 2) / SEGMENTS.length;
+      // We want the target segment to end at angle 0 (pointer top). At angle 0, index 0 is at the right; but we rotate canvas.
+      // Compute finalAngle so that segment center aligns with -90deg / top pointer.
+      const targetAngle = (Math.PI * 3 / 2) - (targetSegment + 0.5) * segAngle; // so that pointer points to center of segment
+      const finalAngle = spins * Math.PI * 2 + targetAngle;
+
+      const duration = 4500 + Math.random() * 1200; // 4.5-5.7s
+      const start = performance.now();
+      const startAngle = currentAngle;
+
+      spinning = true;
+      btnSpin.disabled = true;
+
+      function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+
+      function step(now) {
+        const elapsed = now - start;
+        const t = Math.min(1, elapsed / duration);
+        const eased = easeOutCubic(t);
+        const angle = startAngle + (finalAngle - startAngle) * eased;
+        currentAngle = angle;
+        drawWheel(currentAngle);
+        if (t < 1) {
+          requestAnimationFrame(step);
+        } else {
+          spinning = false;
+          // Determine winning segment
+          const normalized = ((Math.PI * 2) - (currentAngle - Math.PI * 1.5)) % (Math.PI * 2);
+          let idx = Math.floor(normalized / segAngle);
+          if (idx < 0) idx += SEGMENTS.length;
+          idx = idx % SEGMENTS.length;
+          const result = SEGMENTS[idx].label;
+          onSpinEnd(result);
+        }
+      }
+      requestAnimationFrame(step);
+    }
+
+    function showResult(text, tone = "ok") {
+      const box = document.getElementById("resultBox");
+      box.textContent = text;
+      box.className = "result" + (tone === "bad" ? " bad" : tone === "warn" ? " warn" : "");
+      box.style.display = "block";
+    }
+
+    // ===== Auth UI handling =====
+    const btnSignIn = document.getElementById('btnSignIn');
+    const btnSignOut = document.getElementById('btnSignOut');
+    const btnSpin = document.getElementById('btnSpin');
+    const authArea = document.getElementById('authArea');
+
+    btnSignIn.addEventListener('click', async () => {
+      try {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        await auth.signInWithPopup(provider);
+      } catch (e) {
+        console.error(e);
+        alert("Không thể đăng nhập Google: " + e.message);
+      }
+    });
+
+    btnSignOut.addEventListener('click', () => auth.signOut());
+
+    auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        // Update header area
+        authArea.innerHTML = `
+          <div class="user">
+            <img class="avatar" src="${user.photoURL || ''}" alt="" />
+            <div>
+              <div style="font-weight:700">${user.displayName || user.email}</div>
+              <div class="subtitle">${user.email}</div>
+            </div>
+          </div>
+        `;
+        btnSignOut.style.display = "inline-block";
+
+        await afterLogin(user);
+      } else {
+        authArea.innerHTML = `<button id="btnSignIn">Đăng nhập Google</button>`;
+        document.getElementById('btnSignIn').addEventListener('click', async () => {
+          try {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            await auth.signInWithPopup(provider);
+          } catch (e) {
+            console.error(e);
+            alert("Không thể đăng nhập Google: " + e.message);
+          }
+        });
+        btnSignOut.style.display = "none";
+        btnSpin.disabled = true;
+        showResult("Hãy đăng nhập Google để quay!", "warn");
+      }
+    });
+
+    async function afterLogin(user) {
+      drawWheel(currentAngle);
+      const ref = db.collection('spins').doc(user.uid);
+      const snap = await ref.get();
+      if (snap.exists) {
+        const data = snap.data();
+        if (data.canExtraSpin) {
+          btnSpin.disabled = false;
+          showResult("Bạn trúng \"Quay lần nữa\" trước đó — được quay thêm 1 lần!", "warn");
+        } else {
+          btnSpin.disabled = true;
+          const r = data.finalResult || data.firstResult || "(chưa ghi nhận)";
+          showResult(`Bạn đã quay rồi. Kết quả: ${r}`, r.includes("chúc") ? "bad" : "ok");
+        }
+      } else {
+        btnSpin.disabled = false;
+        showResult("Bạn chưa quay. Chúc may mắn!");
+      }
+    }
+
+    async function onSpinEnd(result) {
+      const user = auth.currentUser;
+      if (!user) {
+        showResult("Bạn cần đăng nhập để quay.", "warn");
+        return;
+      }
+
+      const ref = db.collection('spins').doc(user.uid);
+      const snap = await ref.get();
+
+      if (!snap.exists) {
+        // First spin
+        if (result === "Quay lần nữa") {
+          await ref.set({
+            firstResult: result,
+            finalResult: null,
+            canExtraSpin: true,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+          showResult('Bạn trúng "Quay lần nữa" — hãy quay thêm 1 lần!', "warn");
+          btnSpin.disabled = false;
+        } else {
+          await ref.set({
+            firstResult: result,
+            finalResult: result,
+            canExtraSpin: false,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+          btnSpin.disabled = true;
+          showResult(`Kết quả của bạn: ${result}`);
+        }
+      } else {
+        const data = snap.data();
+        if (data.canExtraSpin) {
+          // The one extra spin is allowed now
+          await ref.update({
+            finalResult: result,
+            canExtraSpin: false
+          });
+          btnSpin.disabled = true;
+          showResult(`Kết quả cuối cùng của bạn: ${result}`);
+        } else {
+          // Already spun
+          btnSpin.disabled = true;
+          showResult(`Bạn đã quay rồi. Kết quả: ${data.finalResult || data.firstResult}`, "warn");
+        }
+      }
+    }
+
+    // Initial draw
+    drawWheel(0);
+
+    // Spin button handler
+    btnSpin.addEventListener('click', () => {
+      if (spinning) return;
+      randomSpin();
+    });
+  </script>
+</body>
+</html>
